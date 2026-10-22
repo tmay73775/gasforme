@@ -36,9 +36,16 @@ def fetch_gas_data(zip_code):
         
         regular_price = None
         for f in fuels:
-            if f.get("fuel_type_id") == 1 or f.get("key") == "regular_gas":
-                regular_price = f.get("price")
-                break
+            # Crash protection: Ensure 'f' is a dictionary before using .get()
+            if isinstance(f, dict):
+                if f.get("fuel_type_id") == 1 or f.get("key") == "regular_gas":
+                    regular_price = f.get("price")
+                    break
+            # If the library returns fuels as objects with attributes instead
+            elif hasattr(f, "fuel_type_id"):
+                if f.fuel_type_id == 1 or getattr(f, "key", "") == "regular_gas":
+                    regular_price = getattr(f, "price", None)
+                    break
 
         if regular_price is None or regular_price <= 0:
             continue
@@ -58,7 +65,7 @@ def fetch_gas_data(zip_code):
     cheapest_competitor = None
     if all_other_stations:
         all_other_stations.sort(key=lambda x: x["price"])
-        cheapest_competitor = all_other_stations[0]
+        cheapest_competitor = all_other_stations[0]  # Grab just the absolute lowest choice
 
     return favorite_matches, cheapest_competitor
 
